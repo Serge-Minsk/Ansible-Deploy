@@ -1,0 +1,122 @@
+- name: Provision with Ansible
+  hosts: all
+  become: yes
+
+  vars:
+    services_info: |
+      Jenkins URL - http://localhost:8080/jenkins/
+      Jenkins Delivery - http://localhost:8080/jenkins/view/Pipeline/
+      Application URL - http://localhost:8080/mnt-lab/
+
+  tasks:
+  - name: install one specific version of epel-release
+    yum: name=epel-release-6-8 state=present
+
+  - name: install the 'Development Tools' package group
+    yum: name="@Development tools" state=present
+
+  - name: install the latest version of git
+    yum: name=git state=latest
+
+  - name: download JDK7
+    command: 'chdir=/opt /usr/bin/wget --no-cookies --no-check-certificate --header "Cookie: gpw_e24=http%3A%2F%2Fwww.oracle.com%2F; oraclelicense=accept-securebackup-cookie" "http://download.oracle.com/otn-pub/java/jdk/7u79-b15/jdk-7u79-linux-x64.rpm" creates=/opt/jdk-7u79-linux-x64.rpm'
+
+  - name: install JDK7
+    yum: name=/opt/jdk-7u79-linux-x64.rpm state=present
+
+  - name: correct java version selected
+    alternatives: name=java link=/usr/bin/java path=/usr/java/jdk1.7.0_79/bin/java
+
+  - name: correct javac version selected
+    alternatives: name=javac link=/usr/bin/javac path=/usr/java/jdk1.7.0_79/bin/javac
+
+  - name: download maven
+    get_url: url=http://ftp.byfly.by/pub/apache.org/maven/maven-3/3.3.9/binaries/apache-maven-3.3.9-bin.tar.gz dest=/opt/apache-maven-3.3.9-bin.tar.gz
+
+  - name: extract maven archive
+    unarchive: src=/opt/apache-maven-3.3.9-bin.tar.gz dest=/opt/ copy=no creates=/opt/apache-maven-3.3.9
+
+  - name: copy the jenkins repository
+    copy: src=jenkins.repo dest=/etc/yum.repos.d/jenkins.repo
+
+  - name: import key for jenkins
+    rpm_key: state=present key=https://jenkins-ci.org/redhat/jenkins-ci.org.key
+
+  - name: install applications
+    yum: name={{ item }} state=present
+    with_items:
+      - jenkins
+      - nginx
+
+  - name: create file in sudoers
+    copy: src={{ item }} dest=/etc/sudoers.d/
+    with_items:
+      - jenkins
+      - tomcat
+
+  - name: config xml jenkins
+    template: src=config.xml dest=/var/lib/jenkins/
+    sudo: True
+
+  - name: config prefix for jenkins
+    template: src=jenkins dest=/etc/sysconfig/
+
+  - name: maven config for jenkins
+    copy: src=hudson.tasks.Maven.xml dest=/var/lib/jenkins/
+    sudo: True
+
+
+  - name: jobs for jenkins
+    copy: src=jobs dest=/var/lib/jenkins/
+    sudo: True
+
+  - name: plugins for jenkins
+    command: cp -R /vagrant/plugins /var/lib/jenkins/
+
+  - name: changing owner of jenkins home
+    file: path=/var/lib/jenkins/ owner=jenkins group=jenkins state=directory recurse=yes
+
+  - name: add group "tomcat"
+    group: name=tomcat
+
+  - name: add user "tomcat"
+    user: name=tomcat group=tomcat home=/opt/apache-tomcat-7.0.68 createhome=no
+    sudo: True
+
+  - name: download Tomcat
+    get_url: url=http://ftp.byfly.by/pub/apache.org/tomcat/tomcat-7/v7.0.68/bin/apache-tomcat-7.0.68.tar.gz dest=/opt/apache-tomcat-7.0.68.tar.gz
+
+  - name: extract tomcat archive
+    unarchive: src=/opt/apache-tomcat-7.0.68.tar.gz dest=/opt/ copy=no creates=/opt/apache-tomcat-7.0.68
+
+  - name: change ownership of tomcat installation
+    file: path=/opt/apache-tomcat-7.0.68/ owner=tomcat group=tomcat state=directory recurse=yes
+
+  - name: install tomcat init script
+    copy: src=tomcat-init.sh dest=/etc/init.d/tomcat mode=0755
+
+  - name: configure tomcat server
+    template: src=server.xml dest=/opt/apache-tomcat-7.0.68/conf/
+
+  - name: configure nginx
+    template: src=virtual.conf dest=/etc/nginx/conf.d/
+
+  - name: configure iptables
+    template: src=iptables dest=/etc/sysconfig/
+
+  - name: restart iptables
+    service: name=iptables state=restarted
+
+  - name: Start services
+    service: name={{ item }} state=started enabled=yes
+    with_items:
+      - tomcat
+      - jenkins
+      - nginx
+
+
+
+
+
+
+

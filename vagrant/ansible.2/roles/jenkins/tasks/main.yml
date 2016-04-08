@@ -1,0 +1,69 @@
+---
+# tasks file for jenkins
+- debug: msg="installing jenkins"
+
+- name: install the latest version of git
+  yum: name=git state=present
+
+- name: check maven
+  stat: path=/opt/apache-maven-3.3.9/
+  register: maven_inst
+
+- name: download maven
+  get_url: url=http://ftp.byfly.by/pub/apache.org/maven/maven-3/3.3.9/binaries/apache-maven-3.3.9-bin.tar.gz dest=/opt/apache-maven-3.3.9-bin.tar.gz
+  register: maven_down
+  when: maven_inst.stat.exists == False
+
+- name: extract maven archive
+  unarchive: src=/opt/apache-maven-3.3.9-bin.tar.gz dest=/opt/ copy=no creates=/opt/apache-maven-3.3.9
+  when: maven_down|changed
+
+- name: delete maven archive
+  file: path=/tmp/apache-maven-3.3.9-bin.tar.gz state=absent
+  when: maven_down|changed
+
+- name: copy the jenkins repository
+  copy: src=jenkins.repo dest=/etc/yum.repos.d/jenkins.repo
+
+- name: import key for jenkins
+  rpm_key: state=present key=https://jenkins-ci.org/redhat/jenkins-ci.org.key
+
+- name: install jenkins
+  yum: name=jenkins state=present
+  register: jenkins_inst
+
+- name: create file in sudoers
+  copy: src=jenkins dest=/etc/sudoers.d/
+
+- name: config xml jenkins
+  template: src=config.xml dest=/var/lib/jenkins/
+  sudo: True
+  when: jenkins_inst|changed
+
+- name: config prefix for jenkins
+  template: src=jenkins dest=/etc/sysconfig/
+  when: jenkins_inst|changed
+
+- name: maven config for jenkins
+  copy: src=hudson.tasks.Maven.xml dest=/var/lib/jenkins/
+  sudo: True
+  when: jenkins_inst|changed
+
+- name: jobs for jenkins
+  copy: src=jobs dest=/var/lib/jenkins/
+  sudo: True
+  when: jenkins_inst|changed
+
+- name: plugins for jenkins
+  command: cp -R /vagrant/plugins /var/lib/jenkins/
+  sudo: True
+  when: jenkins_inst|changed
+
+- name: changing owner of jenkins home
+  file: path=/var/lib/jenkins/ owner=jenkins group=jenkins state=directory recurse=yes
+  when: jenkins_inst|changed
+
+- name: start jenkins
+  service: name=jenkins state=started enabled=yes
+
+

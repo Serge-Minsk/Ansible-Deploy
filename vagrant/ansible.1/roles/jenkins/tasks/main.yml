@@ -1,0 +1,3 @@
+---
+# tasks file for jenkins
+- debug: msg="Will install Jenkins"

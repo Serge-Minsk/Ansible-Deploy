@@ -1,0 +1,16 @@
+---
+# tasks file for app
+- debug: msg="installing and configuring nginx"
+
+- name: install nginx
+  yum: name=nginx state=present
+
+- name: configure nginx
+  template: src=virtual.conf dest=/etc/nginx/conf.d/
+
+- name: configure iptables
+  template: src=iptables dest=/etc/sysconfig/
+  notify: restart iptables
+
+- name: start nginx
+  service: name=nginx state=started enabled=yes

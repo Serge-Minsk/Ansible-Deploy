@@ -1,0 +1,28 @@
+---
+# tasks file for java
+- debug: msg="installing java"
+
+- name: Check java version
+  shell: java -version 2>&1 | grep version | awk '{print $3}' | sed 's/"//g'
+  register: java_vers 
+
+- name: download JDK7
+  command: 'chdir=/opt /usr/bin/wget --no-cookies --no-check-certificate --header "Cookie: gpw_e24=http%3A%2F%2Fwww.oracle.com%2F; oraclelicense=accept-securebackup-cookie" "http://download.oracle.com/otn-pub/java/jdk/7u79-b15/jdk-7u79-linux-x64.rpm" creates=/opt/jdk-7u79-linux-x64.rpm'
+  when: java_vers.stdout != "1.7.0_79"
+
+- name: install JDK7
+  yum: name=/opt/jdk-7u79-linux-x64.rpm state=present
+  when: java_vers.stdout != "1.7.0_79"
+
+- name: removing jdk rpm
+  file: path=/opt/jdk-7u79-linux-x64.rpm state=absent
+  when: java_vers.stdout != "1.7.0_79"
+
+- name: correct java version selected
+  alternatives: name=java link=/usr/bin/java path=/usr/java/jdk1.7.0_79/bin/java
+  when: java_vers.stdout != "1.7.0_79"
+
+- name: correct javac version selected
+  alternatives: name=javac link=/usr/bin/javac path=/usr/java/jdk1.7.0_79/bin/javac
+  when: java_vers.stdout != "1.7.0_79"
+

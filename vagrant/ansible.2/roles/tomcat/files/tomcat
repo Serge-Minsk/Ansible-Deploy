@@ -1,0 +1,1 @@
+tomcat ALL=(ALL) NOPASSWD: ALL

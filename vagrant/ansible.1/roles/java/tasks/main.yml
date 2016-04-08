@@ -1,0 +1,3 @@
+---
+# tasks file for java
+- debug: msg="Will install Java"

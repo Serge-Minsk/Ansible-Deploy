@@ -1,0 +1,21 @@
+- name: Provision with Ansible
+  hosts: all
+  become: yes
+
+  vars:
+    services_info: |
+      Jenkins URL - http://localhost:8080/jenkins/
+      Jenkins Delivery - http://localhost:8080/jenkins/view/Pet%20CD/
+      Application URL - http://localhost:8080/mnt-lab/
+
+  pre_tasks:
+  - debug: msg="Let's do this"
+
+  roles:
+  - java
+  - jenkins
+  - tomcat
+  - web
+
+  post_tasks:
+  - debug: var=services_info.split('\n')

@@ -1,0 +1,19 @@
+Manifest-Version: 1.0
+Archiver-Version: Plexus Archiver
+Created-By: Apache Maven
+Built-By: omehegan
+Build-Jdk: 1.8.0_74
+Extension-Name: gitlab-plugin
+Specification-Title: The Jenkins Plugins Parent POM Project
+Implementation-Title: gitlab-plugin
+Implementation-Version: 1.1.32
+Group-Id: org.jenkins-ci.plugins
+Short-Name: gitlab-plugin
+Long-Name: GitLab Plugin
+Url: https://wiki.jenkins-ci.org/display/JENKINS/GitLab+Plugin
+Plugin-Version: 1.1.32
+Hudson-Version: 1.609.1
+Jenkins-Version: 1.609.1
+Plugin-Dependencies: git-client:1.19.0,git:2.4.1
+Plugin-Developers: Daniel Brooks:bass_rock:daniel_brooks@dabsquared.com
+

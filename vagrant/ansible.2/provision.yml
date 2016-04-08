@@ -1,0 +1,20 @@
+- name: Provision with Ansible
+  hosts: all
+  become: yes
+
+  vars:
+    services_info: |
+      Jenkins URL - http://localhost:8080/jenkins/
+      Jenkins Delivery - http://localhost:8080/jenkins/view/Pipeline/
+      Application URL - http://localhost:8080/mnt-lab/
+
+  pre_tasks:
+  - debug: msg="It's ansible debug"
+
+  roles:
+# - { role: tomcat}
+# - { role: jenkins}
+  - { role: app, tomcat_http: 9999, jenkins_port: 8888, nginx_port: 8080, jenkins_prefix: "jenkins"}
+
+  post_tasks:
+  - debug: var=services_info.split('\n')

@@ -1,0 +1,3 @@
+tomcat_http: 9999
+jenkins_port: 8888
+nginx_port: 8080

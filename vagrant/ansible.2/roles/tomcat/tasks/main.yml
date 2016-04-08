@@ -1,0 +1,49 @@
+---
+# tasks file for tomcat
+- debug: msg="installing tomcat"
+
+- name: install the 'Development Tools' package group
+  yum: name="@Development tools" state=present
+
+- name: creating sudoers.d file
+  copy: src=tomcat dest=/etc/sudoers.d/
+
+- name: add group "tomcat"
+  group: name=tomcat
+
+- name: add user "tomcat"
+  user: name=tomcat group=tomcat home=/opt/apache-tomcat-7.0.68 createhome=no
+  sudo: True
+
+- name: check tomcat dir
+  stat: path=/opt/apache-tomcat-7.0.68/
+  register: tomcat_inst
+
+- name: download tomcat
+  get_url: url=http://ftp.byfly.by/pub/apache.org/tomcat/tomcat-7/v7.0.68/bin/apache-tomcat-7.0.68.tar.gz dest=/opt/apache-tomcat-7.0.68.tar.gz
+  register: tomcat_down
+  when: tomcat_inst.stat.exists == False
+
+- name: extract tomcat archive
+  unarchive: src=/opt/apache-tomcat-7.0.68.tar.gz dest=/opt/ copy=no creates=/opt/apache-tomcat-7.0.68
+  when: tomcat_down|changed
+  notify: run tomcat
+
+- name: remove tomcat archive
+  file: path=/opt/apache-tomcat-7.0.68.tar.gz state=absent
+  when: tomcat_down|changed
+
+- name: change ownership of tomcat installation
+  file: path=/opt/apache-tomcat-7.0.68/ owner=tomcat group=tomcat state=directory recurse=yes
+  when: tomcat_down|changed
+
+- name: install tomcat init script
+  copy: src=tomcat-init.sh dest=/etc/init.d/tomcat mode=0755
+  notify: run tomcat
+
+- name: configure tomcat server
+  template: src=server.xml dest=/opt/apache-tomcat-7.0.68/conf/
+  when: tomcat_down|changed
+  notify: run tomcat
+
+
